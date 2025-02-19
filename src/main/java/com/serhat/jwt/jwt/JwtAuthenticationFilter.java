@@ -1,6 +1,6 @@
 package com.serhat.jwt.jwt;
 
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
 import com.serhat.jwt.exception.InvalidTokenException;
 import com.serhat.jwt.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
@@ -62,9 +62,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                User user = (User) userDetails;
+                AppUser appUser = (AppUser) userDetails; // Cast to AppUser
 
-                if (!jwtUtil.validateToken(jwt, user)) {
+                if (!jwtUtil.validateToken(jwt, appUser)) {
                     log.warn("Invalid or expired token for user: {}", username);
                     throw new InvalidTokenException("Invalid or expired token. Please log in again.");
                 }

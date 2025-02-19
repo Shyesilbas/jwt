@@ -1,7 +1,7 @@
 package com.serhat.jwt.service.auth;
 
 import com.serhat.jwt.dto.requests.RegisterRequest;
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
 import com.serhat.jwt.exception.EmailExistException;
 import com.serhat.jwt.exception.PhoneExistsException;
 import com.serhat.jwt.exception.UsernameExists;
@@ -18,7 +18,7 @@ public class UserValidationService implements UserValidationInterface {
     private final UserRepository userRepository;
     @Override
     public void validateUserRegistration(RegisterRequest request) {
-        Optional<User> existingUser = userRepository.findByEmailOrUsernameOrPhone(
+        Optional<AppUser> existingUser = userRepository.findByEmailOrUsernameOrPhone(
                 request.email(),
                 request.username(),
                 request.phone()

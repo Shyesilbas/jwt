@@ -1,7 +1,7 @@
 package com.serhat.jwt.jwt;
 
+import com.serhat.jwt.entity.AppUser;
 import com.serhat.jwt.entity.Token;
-import com.serhat.jwt.entity.User;
 import com.serhat.jwt.entity.enums.Role;
 import com.serhat.jwt.entity.enums.TokenStatus;
 import com.serhat.jwt.exception.InvalidTokenException;
@@ -41,20 +41,20 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(User user, Role role) {
-        // log.info("Generating token for user: {}", user.getUsername());
+    public String generateToken(AppUser appUser) {
+        log.info("Generating token for user: {}", appUser.getUsername());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role.name());
+        claims.put("role", appUser.getRole().name());
 
         String token = Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getUsername())
+                .setSubject(appUser.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
 
-        log.info("Token generated successfully for user: {}", user.getUsername());
+        log.info("Token generated successfully for user: {}", appUser.getUsername());
         return token;
     }
 
@@ -96,14 +96,14 @@ public class JwtUtil {
         }
     }
 
-    public boolean validateToken(String token, User user) {
-        log.info("Validating token for user: {}", user.getUsername());
+    public boolean validateToken(String token, AppUser appUser) {
+        log.info("Validating token for user: {}", appUser.getUsername());
         try {
             final String username = extractUsername(token);
             Token storedToken = tokenRepository.findByToken(token)
                     .orElseThrow(() -> new InvalidTokenException("Token not found in database"));
 
-            boolean isValid = username.equals(user.getUsername()) && !isTokenInvalid(token);
+            boolean isValid = username.equals(appUser.getUsername()) && !isTokenInvalid(token);
 
             log.info("Token validation result: {}", isValid);
 
@@ -132,9 +132,9 @@ public class JwtUtil {
         log.debug("Token invalidated: {}", jwtToken);
     }
 
-    public void saveUserToken(User user, String token) {
+    public void saveUserToken(AppUser appUser, String token) {
         Token newToken = Token.builder()
-                .username(user.getUsername())
+                .username(appUser.getUsername())
                 .token(token)
                 .createdAt(new Date())
                 .expiresAt(new Date(System.currentTimeMillis() + expiration))
@@ -142,7 +142,7 @@ public class JwtUtil {
                 .build();
 
         tokenRepository.save(newToken);
-        log.debug("Token saved for user: {}", user.getUsername());
+        log.debug("Token saved for user: {}", appUser.getUsername());
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

@@ -1,8 +1,7 @@
 package com.serhat.jwt.mapper;
 
-import com.serhat.jwt.dto.objects.UserDto;
 import com.serhat.jwt.dto.requests.RegisterRequest;
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -12,8 +11,8 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
     private final PasswordEncoder passwordEncoder;
 
-    public User toUser(RegisterRequest request){
-        return User.builder()
+    public AppUser toUser(RegisterRequest request){
+        return AppUser.builder()
                 .email(request.email())
                 .phone(request.phone())
                 .password(passwordEncoder.encode(request.password()))

@@ -4,7 +4,7 @@ import com.serhat.jwt.dto.requests.LoginRequest;
 import com.serhat.jwt.dto.requests.RegisterRequest;
 import com.serhat.jwt.dto.responses.AuthResponse;
 import com.serhat.jwt.dto.responses.RegisterResponse;
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
 import com.serhat.jwt.entity.enums.Role;
 import com.serhat.jwt.interfaces.PasswordValidationInterface;
 import com.serhat.jwt.interfaces.UserInterface;
@@ -39,7 +39,7 @@ public class AuthService {
     public RegisterResponse register(RegisterRequest request) {
         userValidationInterface.validateUserRegistration(request);
 
-        User user = userMapper.toUser(request);
+        AppUser user = userMapper.toUser(request);
         userRepository.save(user);
 
         return new RegisterResponse(
@@ -55,14 +55,15 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Attempting login for user: {}", request.username());
 
-        User user = userInterface.findUserByUsername(request.username());
-        passwordValidationInterface.validatePassword(request.password(), user.getPassword());
+        AppUser appUser = userInterface.findUserByUsername(request.username());
 
-        String token = jwtUtil.generateToken(user, user.getRole());
-        jwtUtil.saveUserToken(user, token);
+        passwordValidationInterface.validatePassword(request.password(), appUser.getPassword());
+
+        String token = jwtUtil.generateToken(appUser);
+        jwtUtil.saveUserToken(appUser, token);
 
         log.info("Login successful for user: {}", request.username());
-        return authMapper.createAuthResponse(token, user.getUsername(), user.getRole(), "Login Successful!");
+        return authMapper.createAuthResponse(token, appUser.getUsername(), appUser.getRole(), "Login Successful!");
     }
 
     @Transactional

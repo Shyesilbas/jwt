@@ -1,7 +1,8 @@
 package com.serhat.jwt.interfaces;
 
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
+
 
 public interface UserInterface {
-    User findUserByUsername(String username);
+    AppUser findUserByUsername(String username);
 }

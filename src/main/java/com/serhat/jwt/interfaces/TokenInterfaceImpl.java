@@ -1,6 +1,6 @@
 package com.serhat.jwt.interfaces;
 
-import com.serhat.jwt.entity.User;
+import com.serhat.jwt.entity.AppUser;
 import com.serhat.jwt.entity.enums.Role;
 import com.serhat.jwt.jwt.JwtUtil;
 import com.serhat.jwt.repository.UserRepository;
@@ -36,7 +36,7 @@ public class TokenInterfaceImpl implements TokenInterface{
                 .orElse(null);
     }
     @Override
-    public User getUserFromToken(HttpServletRequest request) {
+    public AppUser getUserFromToken(HttpServletRequest request) {
         String token = extractTokenFromRequest(request);
         if (token == null) {
             throw new RuntimeException("Token not found in request");
