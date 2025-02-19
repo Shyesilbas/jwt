@@ -15,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -41,26 +43,32 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(AppUser appUser) {
-        log.info("Generating token for user: {}", appUser.getUsername());
+    public String generateToken(UserDetails userDetails) {
+        log.info("Generating token for user: {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", appUser.getRole().name());
+
+        String role = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("ROLE_USER")
+                .replace("ROLE_", "");
+        claims.put("role", role);
 
         String token = Jwts.builder()
                 .setClaims(claims)
-                .setSubject(appUser.getUsername())
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
 
-        log.info("Token generated successfully for user: {}", appUser.getUsername());
+        log.info("Token generated successfully for user: {}", userDetails.getUsername());
         return token;
     }
 
     public String extractUsername(String token) {
         log.debug("Extracting username from token");
-        return extractClaim(token, Claims::getSubject);
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     public Role extractRole(String token) {
@@ -96,14 +104,14 @@ public class JwtUtil {
         }
     }
 
-    public boolean validateToken(String token, AppUser appUser) {
-        log.info("Validating token for user: {}", appUser.getUsername());
+    public boolean validateToken(String token, UserDetails userDetails) {
+        log.info("Validating token for user: {}", userDetails.getUsername());
         try {
             final String username = extractUsername(token);
             Token storedToken = tokenRepository.findByToken(token)
                     .orElseThrow(() -> new InvalidTokenException("Token not found in database"));
 
-            boolean isValid = username.equals(appUser.getUsername()) && !isTokenInvalid(token);
+            boolean isValid = username.equals(userDetails.getUsername()) && !isTokenInvalid(token);
 
             log.info("Token validation result: {}", isValid);
 
@@ -132,9 +140,9 @@ public class JwtUtil {
         log.debug("Token invalidated: {}", jwtToken);
     }
 
-    public void saveUserToken(AppUser appUser, String token) {
+    public void saveUserToken(UserDetails userDetails, String token) {
         Token newToken = Token.builder()
-                .username(appUser.getUsername())
+                .username(userDetails.getUsername())
                 .token(token)
                 .createdAt(new Date())
                 .expiresAt(new Date(System.currentTimeMillis() + expiration))
@@ -142,7 +150,7 @@ public class JwtUtil {
                 .build();
 
         tokenRepository.save(newToken);
-        log.debug("Token saved for user: {}", appUser.getUsername());
+        log.debug("Token saved for user: {}", userDetails.getUsername());
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -62,9 +63,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                AppUser appUser = (AppUser) userDetails; // Cast to AppUser
+                User user = (User) userDetails; // Cast to AppUser
 
-                if (!jwtUtil.validateToken(jwt, appUser)) {
+                if (!jwtUtil.validateToken(jwt, user)) {
                     log.warn("Invalid or expired token for user: {}", username);
                     throw new InvalidTokenException("Invalid or expired token. Please log in again.");
                 }

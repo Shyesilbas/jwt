@@ -14,9 +14,12 @@ import com.serhat.jwt.jwt.TokenBlacklistService;
 import com.serhat.jwt.mapper.AuthMapper;
 import com.serhat.jwt.mapper.UserMapper;
 import com.serhat.jwt.repository.UserRepository;
+import com.serhat.jwt.service.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +33,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final TokenBlacklistService blacklistService;
     private final AuthMapper authMapper;
-    private final UserInterface userInterface;
+    private final UserDetailsServiceImpl userDetailsService;
     private final PasswordValidationInterface passwordValidationInterface;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -55,15 +58,17 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         log.info("Attempting login for user: {}", request.username());
 
-        AppUser appUser = userInterface.findUserByUsername(request.username());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
 
-        passwordValidationInterface.validatePassword(request.password(), appUser.getPassword());
+        passwordValidationInterface.validatePassword(request.password(), userDetails.getPassword());
 
-        String token = jwtUtil.generateToken(appUser);
-        jwtUtil.saveUserToken(appUser, token);
+        String token = jwtUtil.generateToken(userDetails);
+        jwtUtil.saveUserToken(userDetails, token);
+        Role role = jwtUtil.extractRole(token);
+
 
         log.info("Login successful for user: {}", request.username());
-        return authMapper.createAuthResponse(token, appUser.getUsername(), appUser.getRole(), "Login Successful!");
+        return authMapper.createAuthResponse(token, userDetails.getUsername(), role, "Login Successful!");
     }
 
     @Transactional
